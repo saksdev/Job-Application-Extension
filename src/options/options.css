@@ -1,0 +1,169 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, Segoe UI, Roboto, sans-serif;
+  font-size: 14px;
+  color: #e8eaed;
+  background: #13151a;
+  line-height: 1.5;
+}
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+}
+
+.page__head h1 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.page__head p {
+  margin: 0;
+  color: #9aa0a6;
+  font-size: 13px;
+}
+
+.card {
+  margin-top: 20px;
+  padding: 18px 20px;
+  background: #1a1d23;
+  border-radius: 12px;
+  border: 1px solid #2d3139;
+}
+
+.card h2 {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.field span {
+  font-size: 12px;
+  color: #bdc1c6;
+}
+
+.field--row {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.field--row input[type='checkbox'] {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.field--row span {
+  flex: 1;
+}
+
+.field input,
+.field select,
+.field textarea {
+  padding: 9px 11px;
+  border-radius: 8px;
+  border: 1px solid #3c4048;
+  background: #13151a;
+  color: #e8eaed;
+  font-size: 14px;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 88px;
+  line-height: 1.45;
+  font-family: inherit;
+}
+
+.card__sub {
+  margin: 18px 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #bdc1c6;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  margin-bottom: 8px;
+}
+
+.grow {
+  flex: 1;
+  min-width: 200px;
+  margin-bottom: 0;
+}
+
+.btn {
+  padding: 9px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  height: 38px;
+}
+
+.btn--primary {
+  background: linear-gradient(135deg, #1a73e8, #4285f4);
+  color: #fff;
+}
+
+.btn--secondary {
+  background: #2d3139;
+  color: #e8eaed;
+}
+
+.btn--danger {
+  background: #3c1f1f;
+  color: #f28b82;
+}
+
+.footer {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ok {
+  color: #81c995;
+  font-size: 13px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: #9aa0a6;
+}
+
+.hint--block {
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.hint--block a {
+  color: #8ab4f8;
+}
+
+.hint--block code {
+  font-size: 11px;
+  background: #13151a;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
