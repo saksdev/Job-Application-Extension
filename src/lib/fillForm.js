@@ -48,25 +48,50 @@ function setNativeValue(el, value, fromExtension) {
   el.dispatchEvent(new Event('change', { bubbles: true }))
 }
 
-function setSelectValue(select, value) {
+/**
+ * Advanced select fill — tries multiple strategies in order.
+ * 1. Exact value/text match
+ * 2. ISO country code (e.g. IN → India options)
+ * 3. Case-insensitive substring (profile value is substring of option text)
+ * 4. Reverse substring (option text is substring of profile value)
+ */
+function setSelectValue(select, value, profileKey, profile) {
   const v = (value || '').trim()
   if (!v) return false
   const opts = Array.from(select.options)
-  const exact = opts.find((o) => o.value === v || o.text.trim() === v)
-  if (exact) {
-    select.value = exact.value
-    markFilledByExtension(select)
-    select.dispatchEvent(new Event('change', { bubbles: true }))
-    return true
+
+  // Strategy 1: exact match (value or visible text)
+  let match = opts.find((o) => o.value === v || o.text.trim() === v)
+  if (match) { select.value = match.value; markFilledByExtension(select); select.dispatchEvent(new Event('change', { bubbles: true })); return true }
+
+  const vLower = v.toLowerCase()
+
+  // Strategy 2: for country fields, also try the ISO 2-letter code stored in profile.countryCode
+  if ((profileKey === 'country' || profileKey === 'countryCode') && profile?.countryCode) {
+    const iso = profile.countryCode.toUpperCase()
+    match = opts.find((o) => o.value.toUpperCase() === iso || o.text.trim().toUpperCase() === iso)
+    if (match) { select.value = match.value; markFilledByExtension(select); select.dispatchEvent(new Event('change', { bubbles: true })); return true }
   }
-  const lower = v.toLowerCase()
-  const fuzzy = opts.find((o) => o.text.toLowerCase().includes(lower) || lower.includes(o.text.toLowerCase()))
-  if (fuzzy) {
-    select.value = fuzzy.value
-    markFilledByExtension(select)
-    select.dispatchEvent(new Event('change', { bubbles: true }))
-    return true
+
+  // Strategy 3: for phone country code dropdowns (dial-code selects), match "+91", "91", "India"
+  if (profileKey === 'phoneCountryCode' && profile?.phoneCountryCode) {
+    const code = profile.phoneCountryCode.replace('+', '').trim()  // e.g. '91'
+    match = opts.find((o) =>
+      o.value.replace('+', '').trim() === code ||
+      o.text.replace('+', '').trim().startsWith(code) ||
+      o.text.toLowerCase().includes(vLower)
+    )
+    if (match) { select.value = match.value; markFilledByExtension(select); select.dispatchEvent(new Event('change', { bubbles: true })); return true }
   }
+
+  // Strategy 4: case-insensitive substring
+  match = opts.find((o) => o.text.trim().toLowerCase().includes(vLower))
+  if (match) { select.value = match.value; markFilledByExtension(select); select.dispatchEvent(new Event('change', { bubbles: true })); return true }
+
+  // Strategy 5: reverse — option text is a substring of our value (e.g. "US" in "United States")
+  match = opts.find((o) => vLower.includes(o.text.trim().toLowerCase()) && o.text.trim().length > 1)
+  if (match) { select.value = match.value; markFilledByExtension(select); select.dispatchEvent(new Event('change', { bubbles: true })); return true }
+
   return false
 }
 
@@ -83,6 +108,14 @@ function resolveProfileKey(el, useAdvancedClassify) {
     key = classifyFieldDescriptor(getFieldDescriptor(el))
   }
   return key
+}
+
+/** Quick text blob from an input element for heuristic detection. */
+function collectFieldHints(el) {
+  const parts = [el.name, el.id, el.placeholder, el.getAttribute('aria-label'), el.getAttribute('autocomplete')]
+  const label = el.closest('label') || document.querySelector(`label[for="${el.id}"]`)
+  if (label) parts.push(label.textContent)
+  return parts.filter(Boolean).join(' ').toLowerCase()
 }
 
 /**
@@ -108,8 +141,9 @@ export async function fillVisibleFields(profile, options = {}) {
 
     if (el.tagName === 'SELECT') {
       const key = resolveProfileKey(el, useAdvancedClassify)
-      if (key && profile[key]) {
-        if (setSelectValue(el, String(profile[key]))) filled.push({ tag: 'select', key })
+      if (key && (profile[key] || (key === 'country' && profile.countryCode))) {
+        const val = profile[key] || profile.countryCode
+        if (setSelectValue(el, String(val), key, profile)) filled.push({ tag: 'select', key })
       }
       continue
     }
@@ -122,7 +156,18 @@ export async function fillVisibleFields(profile, options = {}) {
 
     const key = resolveProfileKey(el, useAdvancedClassify)
     if (key && profile[key]) {
-      setNativeValue(el, String(profile[key]), true)
+      // Smart phone formatting: if the field is a country-code-only input and we have phoneCountryCode,
+      // prefer that. If the field wants a full number, use phone. If phone starts with '+', strip country
+      // code for sites that separate the dial-code into a dropdown.
+      let valueToFill = String(profile[key])
+      if (key === 'phone') {
+        const blob = collectFieldHints(el)
+        const isDialCodeOnly = blob.match(/dial|code|country code|calling|international/)
+        if (isDialCodeOnly && profile.phoneCountryCode) {
+          valueToFill = profile.phoneCountryCode
+        }
+      }
+      setNativeValue(el, valueToFill, true)
       filled.push({ tag: el.tagName, type, key })
       continue
     }

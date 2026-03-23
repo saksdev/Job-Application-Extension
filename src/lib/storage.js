@@ -42,6 +42,10 @@ export function createEmptyProfile(id, label) {
     fullName: '',
     email: '',
     phone: '',
+    /** E.g. '+91' or '+1' — filled when a field asks for country dial code separately. */
+    phoneCountryCode: '',
+    /** ISO 3166-1 alpha-2 code, e.g. 'IN', 'US'. Helps match country dropdowns. */
+    countryCode: '',
     address: '',
     city: '',
     state: '',

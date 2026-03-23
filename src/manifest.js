@@ -8,9 +8,21 @@ export default defineManifest({
     'Fill job applications from your saved profile using a built-in field understanding model (no external AI required).',
   permissions: ['storage', 'activeTab', 'scripting'],
   host_permissions: ['<all_urls>'],
+  icons: {
+    16:  'src/icons/icon16.png',
+    32:  'src/icons/icon32.png',
+    48:  'src/icons/icon48.png',
+    128: 'src/icons/icon128.png',
+  },
   action: {
     default_popup: 'src/popup/index.html',
     default_title: 'Job Form Auto-Fill',
+    default_icon: {
+      16:  'src/icons/icon16.png',
+      32:  'src/icons/icon32.png',
+      48:  'src/icons/icon48.png',
+      128: 'src/icons/icon128.png',
+    },
   },
   background: {
     service_worker: 'src/background/index.js',

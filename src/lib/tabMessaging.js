@@ -8,8 +8,8 @@ import { BG_MESSAGE } from './constants.js'
 
 const { FORWARD_TO_TAB } = BG_MESSAGE
 
-function isHttpPage(url) {
-  return /^https?:\/\//i.test(url || '')
+function isAllowedPage(url) {
+  return /^https?:\/\//i.test(url || '') || /^file:\/\//i.test(url || '')
 }
 
 /**
@@ -24,9 +24,9 @@ export async function sendToActiveTab(message) {
   }
 
   const url = tab.url || ''
-  if (!isHttpPage(url)) {
+  if (!isAllowedPage(url)) {
     throw new Error(
-      'Open a normal website (address must start with http:// or https://). New tab, PDF, or browser settings pages cannot run extensions.',
+      'Cannot run on this page type. Supported: http://, https://, file://. For local files, go to chrome://extensions and enable "Allow access to file URLs" for this extension.',
     )
   }
 
