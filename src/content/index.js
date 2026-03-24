@@ -20,11 +20,10 @@ if (!globalThis[INIT_GUARD]) {
         
         const runAutofill = async () => {
           const profile = await getActiveProfile()
-          // Only attempt if not empty.
-          if (!profile.email && !profile.firstName) return 
-          
+          if (!profile.email && !profile.firstName) return
           const useAdvancedClassify = ext.useAdvancedFieldModel !== false
-          await fillVisibleFields(profile, { useAdvancedClassify })
+          const aiSettings = { aiProvider: ext.aiProvider, aiApiKey: ext.aiApiKey, aiModel: ext.aiModel }
+          await fillVisibleFields(profile, { useAdvancedClassify, aiSettings })
           tryFillResumeFileInput(profile)
         }
 
@@ -59,11 +58,12 @@ if (!globalThis[INIT_GUARD]) {
           const profile = await getActiveProfile()
           const ext = await getExtensionSettings()
           const resumeResult = tryFillResumeFileInput(profile)
-
           const useAdvancedClassify = ext.useAdvancedFieldModel !== false && message.useAdvancedClassify !== false
+          const aiSettings = { aiProvider: ext.aiProvider, aiApiKey: ext.aiApiKey, aiModel: ext.aiModel }
 
           const result = await fillVisibleFields(profile, {
             useAdvancedClassify,
+            aiSettings,
           })
 
           sendResponse({

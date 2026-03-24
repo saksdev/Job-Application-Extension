@@ -5,6 +5,7 @@ import {
   getFieldDescriptor,
 } from './fieldMatcher.js'
 import { classifyFieldDescriptor, pickEssayTemplateForField } from './fieldUnderstandingModel.js'
+import { classifyFieldWithAI, generateEssayWithAI } from './aiEngine.js'
 
 const EXT_MARK = 'data-af-ext'
 
@@ -122,9 +123,11 @@ function collectFieldHints(el) {
  * @param {object} profile
  * @param {object} [options]
  * @param {boolean} [options.useAdvancedClassify] - use built-in Field Understanding Model when rules miss
+ * @param {object} [options.aiSettings] - { aiProvider, aiApiKey, aiModel } for AI fallback
  */
 export async function fillVisibleFields(profile, options = {}) {
   const useAdvancedClassify = options.useAdvancedClassify !== false
+  const aiSettings = options.aiSettings || null
 
   const filled = []
   const skipped = []
@@ -155,24 +158,41 @@ export async function fillVisibleFields(profile, options = {}) {
     }
 
     const key = resolveProfileKey(el, useAdvancedClassify)
-    if (key && profile[key]) {
-      // Smart phone formatting: if the field is a country-code-only input and we have phoneCountryCode,
-      // prefer that. If the field wants a full number, use phone. If phone starts with '+', strip country
-      // code for sites that separate the dial-code into a dropdown.
-      let valueToFill = String(profile[key])
+    if (key) {
+      let valueToFill = profile[key] ? String(profile[key]) : null
+
       if (key === 'phone') {
         const blob = collectFieldHints(el)
-        const isDialCodeOnly = blob.match(/dial|code|country code|calling|international/)
+        const isDialCodeOnly = /dial|calling code|country code|international code/.test(blob)
+        const isSplitNumberField = /without.{0,12}code|number only|local number|exclude.{0,12}code/.test(blob)
+
         if (isDialCodeOnly && profile.phoneCountryCode) {
+          // This field only wants the +XX code
           valueToFill = profile.phoneCountryCode
+        } else if (isSplitNumberField && profile.phone) {
+          // This field explicitly wants number WITHOUT code
+          valueToFill = profile.phone
+        } else if (!isSplitNumberField && profile.phoneCountryCode && profile.phone) {
+          // Regular single phone field → combine code + number
+          valueToFill = profile.phoneCountryCode + profile.phone
+        } else {
+          valueToFill = profile.phone || null
         }
       }
-      setNativeValue(el, valueToFill, true)
-      filled.push({ tag: el.tagName, type, key })
-      continue
+
+      if (key === 'phoneCountryCode' && profile.phoneCountryCode) {
+        valueToFill = profile.phoneCountryCode
+      }
+
+      if (valueToFill) {
+        setNativeValue(el, valueToFill, true)
+        filled.push({ tag: el.tagName, type, key })
+        continue
+      }
     }
 
     if (isLikelyEssayQuestion(el)) {
+      const descriptor = getFieldDescriptor(el)
       const customKey = getFieldStorageKey(el)
       const saved = profile.customFormAnswers?.[customKey]
       if (saved) {
@@ -181,16 +201,40 @@ export async function fillVisibleFields(profile, options = {}) {
         continue
       }
 
-      const template = pickEssayTemplateForField(getFieldDescriptor(el), profile)
+      const template = pickEssayTemplateForField(descriptor, profile)
       if (template) {
         setNativeValue(el, template, true)
         filled.push({ tag: el.tagName, type, key: 'template' })
         continue
       }
 
+      // 🤖 AI fallback: ask the AI to write a personalized answer
+      if (aiSettings?.aiProvider && aiSettings?.aiApiKey) {
+        const questionText = descriptor.labelText || descriptor.placeholder || descriptor.ariaLabel || ''
+        if (questionText) {
+          const aiAnswer = await generateEssayWithAI(questionText, profile, aiSettings)
+          if (aiAnswer) {
+            setNativeValue(el, aiAnswer, true)
+            filled.push({ tag: el.tagName, type, key: 'ai-essay' })
+            continue
+          }
+        }
+      }
+
       skipped.push({ reason: 'no_template', hint: customKey.slice(0, 80) })
+      continue
     }
-  }
+
+    // 🤖 AI fallback for completely unrecognized non-essay fields
+    if (!isLikelyEssayQuestion(el) && aiSettings?.aiProvider && aiSettings?.aiApiKey) {
+      const descriptor = getFieldDescriptor(el)
+      const aiKey = await classifyFieldWithAI(descriptor, aiSettings)
+      if (aiKey && profile[aiKey]) {
+        setNativeValue(el, String(profile[aiKey]), true)
+        filled.push({ tag: el.tagName, type, key: `ai:${aiKey}` })
+      }
+    }
+  } // end for
 
   return { filled, skipped }
 }

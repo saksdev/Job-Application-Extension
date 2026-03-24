@@ -7,7 +7,11 @@ export default defineManifest({
   description:
     'Fill job applications from your saved profile using a built-in field understanding model (no external AI required).',
   permissions: ['storage', 'activeTab', 'scripting'],
-  host_permissions: ['<all_urls>'],
+  host_permissions: [
+    '<all_urls>',
+    'https://models.inference.ai.azure.com/*',
+    'https://api-inference.huggingface.co/*',
+  ],
   icons: {
     16:  'src/icons/icon16.png',
     32:  'src/icons/icon32.png',

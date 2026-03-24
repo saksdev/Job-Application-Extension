@@ -13,6 +13,17 @@ export function defaultExtensionSettings() {
     useAdvancedFieldModel: true,
     /** When on, automatically fills fields without clicking the extension. */
     autopilotEnabled: false,
+    // ── AI Backend ─────────────────────────────────────
+    /** 'github' | 'huggingface' | '' (disabled) */
+    aiProvider: '',
+    /** API key / token for the selected provider */
+    aiApiKey: '',
+    /** Model name override — leave blank to use provider default */
+    aiModel: '',
+    /** Cloudflare Worker URL (e.g. https://job-ai.name.workers.dev) */
+    aiWorkerUrl: '',
+    /** Optional secret key for Cloudflare Worker auth */
+    aiSecretKey: '',
   }
 }
 
