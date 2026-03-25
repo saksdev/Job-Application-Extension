@@ -343,4 +343,4 @@ If this project helps your job search, consider:
 
 ## 📄 License
 
-Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for details.
+Distributed under the **MIT License**. See `LICENSE` for details.
