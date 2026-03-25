@@ -344,11 +344,3 @@ If this project helps your job search, consider:
 ## 📄 License
 
 Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for details.
-
----
-
-<div align="center">
-
-Made with ❤️ by [Saksham Sharma](https://github.com/saksham-sharma) — built to make job hunting suck less.
-
-</div>
