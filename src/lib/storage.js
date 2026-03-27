@@ -15,11 +15,8 @@ export function defaultExtensionSettings() {
     autopilotEnabled: false,
     // ── AI Backend ─────────────────────────────────────
     /** 'github' | 'huggingface' | '' (disabled) */
-    aiProvider: '',
-    /** API key / token for the selected provider */
-    aiApiKey: '',
-    /** Model name override — leave blank to use provider default */
-    aiModel: '',
+    /** Whether the AI assistant is turned on */
+    aiEnabled: true,
     /** Cloudflare Worker URL (e.g. https://job-ai.name.workers.dev) */
     aiWorkerUrl: '',
     /** Optional secret key for Cloudflare Worker auth */

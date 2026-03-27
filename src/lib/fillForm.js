@@ -132,13 +132,24 @@ export async function fillVisibleFields(profile, options = {}) {
   const filled = []
   const skipped = []
 
-  const inputs = document.querySelectorAll(
-    'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]), textarea, select',
-  )
+  let currentPass = 0
 
-  for (const el of inputs) {
-    if (el.disabled || el.readOnly) continue
-    if (el.getAttribute(EXT_MARK) === '1') continue // Skip already filled inputs
+  while (currentPass < 4) {
+    currentPass++
+    const filledBeforePass = filled.length
+
+    const inputs = document.querySelectorAll(
+      'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]), textarea, select',
+    )
+
+    // Smart detection: check if there's a dedicated country code field on the page
+    const hasSeparateCountryCodeField = Array.from(inputs).some(
+      (el) => resolveProfileKey(el, false) === 'phoneCountryCode' || /dial|calling code|country code|international code/.test(collectFieldHints(el))
+    )
+
+    for (const el of inputs) {
+      if (el.disabled || el.readOnly) continue
+      if (el.getAttribute(EXT_MARK) === '1') continue // Skip already filled inputs
     const rect = el.getBoundingClientRect()
     if (rect.width === 0 && rect.height === 0) continue
 
@@ -169,10 +180,10 @@ export async function fillVisibleFields(profile, options = {}) {
         if (isDialCodeOnly && profile.phoneCountryCode) {
           // This field only wants the +XX code
           valueToFill = profile.phoneCountryCode
-        } else if (isSplitNumberField && profile.phone) {
+        } else if ((isSplitNumberField || hasSeparateCountryCodeField) && profile.phone) {
           // This field explicitly wants number WITHOUT code
           valueToFill = profile.phone
-        } else if (!isSplitNumberField && profile.phoneCountryCode && profile.phone) {
+        } else if (!isSplitNumberField && !hasSeparateCountryCodeField && profile.phoneCountryCode && profile.phone) {
           // Regular single phone field → combine code + number
           valueToFill = profile.phoneCountryCode + profile.phone
         } else {
@@ -209,7 +220,7 @@ export async function fillVisibleFields(profile, options = {}) {
       }
 
       // 🤖 AI fallback: ask the AI to write a personalized answer
-      if (aiSettings?.aiProvider && aiSettings?.aiApiKey) {
+      if (aiSettings && aiSettings.aiWorkerUrl) {
         const questionText = descriptor.labelText || descriptor.placeholder || descriptor.ariaLabel || ''
         if (questionText) {
           const aiAnswer = await generateEssayWithAI(questionText, profile, aiSettings)
@@ -226,7 +237,7 @@ export async function fillVisibleFields(profile, options = {}) {
     }
 
     // 🤖 AI fallback for completely unrecognized non-essay fields
-    if (!isLikelyEssayQuestion(el) && aiSettings?.aiProvider && aiSettings?.aiApiKey) {
+    if (!isLikelyEssayQuestion(el) && aiSettings && aiSettings.aiWorkerUrl) {
       const descriptor = getFieldDescriptor(el)
       const aiKey = await classifyFieldWithAI(descriptor, aiSettings)
       if (aiKey && profile[aiKey]) {
@@ -235,6 +246,15 @@ export async function fillVisibleFields(profile, options = {}) {
       }
     }
   } // end for
+
+  const newlyFilledThisPass = filled.length - filledBeforePass
+  if (newlyFilledThisPass > 0 && currentPass < 4) {
+    // Wait for cascading dropdowns to fetch and render (e.g. Country -> State -> City)
+    await new Promise((resolve) => setTimeout(resolve, 800))
+  } else {
+    break
+  }
+} // end while
 
   return { filled, skipped }
 }

@@ -8,7 +8,7 @@ import {
   createEmptyProfile,
 } from '../lib/storage.js'
 import { DEFAULT_PROFILE_ID } from '../lib/constants.js'
-import { testAIConnection, AI_PROVIDERS } from '../lib/aiEngine.js'
+import { testAIConnection } from '../lib/aiEngine.js'
 
 const FIELDS = [
   { key: 'label',             label: 'Profile name' },
@@ -219,122 +219,42 @@ export default function App() {
       <section className="card">
         <h2>🤖 AI Brain</h2>
         <p className="hint" style={{marginBottom:'14px'}}>
-          AI writes personalized essay answers and classifies unknown fields.
-          <strong> Cloudflare Worker is recommended</strong> — free, no user token needed.
+          AI writes personalized essay answers and intelligently classifies unknown form fields.
         </p>
 
-        {/* Cloudflare Worker (recommended) */}
-        <div style={{padding:'14px', background:'#f0fdf4', borderRadius:'10px', border:'1.5px solid #86efac', marginBottom:'14px'}}>
-          <div style={{fontWeight:700, marginBottom:'6px'}}>⭐ Cloudflare Workers AI
-            <span style={{fontSize:'0.75rem', background:'#dcfce7', color:'#166534', padding:'1px 8px', borderRadius:'999px', marginLeft:'8px'}}>Recommended — Free</span>
-          </div>
-          <p className="hint" style={{marginBottom:'10px'}}>Deploy a free worker on Cloudflare (Llama 3.1). Users need nothing — just paste the URL.</p>
-          <label className="field" style={{marginBottom:'8px'}}>
-            <span>Your Worker URL</span>
-            <input
-              value={ext.aiWorkerUrl || ''}
-              onChange={(e) => updateExt({ aiWorkerUrl: e.target.value, aiProvider: e.target.value ? 'cloudflare' : '' })}
-              placeholder="https://job-autofill-ai.yourname.workers.dev"
-            />
-          </label>
-          <label className="field" style={{marginBottom:'10px'}}>
-            <span>Worker secret key (optional)</span>
-            <input type="password" value={ext.aiSecretKey || ''}
-              onChange={(e) => updateExt({ aiSecretKey: e.target.value })}
-              placeholder="Leave blank if none" />
-          </label>
-          {ext.aiWorkerUrl && (
-            <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
-              <button type="button" className="btn btn--secondary" onClick={testAI}>Test Worker</button>
-              {aiTestStatus && <span className="hint" style={{fontSize:'0.85rem'}}>{aiTestStatus}</span>}
-            </div>
-          )}
-        </div>
-
-        {/* Token-based fallback */}
-        <details>
-          <summary style={{cursor:'pointer',fontWeight:600,fontSize:'0.875rem',color:'#475569',padding:'4px 0'}}>
-            Or use your own API token (GitHub Models / HuggingFace)
-          </summary>
-          <div style={{marginTop:'10px'}}>
-            <label className="field" style={{marginBottom:'10px'}}>
-              <span>Provider</span>
-              <select value={['github','huggingface'].includes(ext.aiProvider) ? ext.aiProvider : ''}
-                onChange={(e) => updateExt({ aiProvider: e.target.value || 'cloudflare' })}>
-                <option value="">-- Select --</option>
-                <option value="github">⭐ GitHub Models (free with GitHub account)</option>
-                <option value="huggingface">🤗 HuggingFace (free tier)</option>
-              </select>
-            </label>
-            {['github','huggingface'].includes(ext.aiProvider) && (
-              <>
-                <label className="field" style={{marginBottom:'8px'}}>
-                  <span>API Key / Token</span>
-                  <input type="password" value={ext.aiApiKey || ''}
-                    onChange={(e) => updateExt({ aiApiKey: e.target.value })}
-                    placeholder="Paste token here" />
-                </label>
-                <label className="field" style={{marginBottom:'10px'}}>
-                  <span>Model (optional)</span>
-                  <input value={ext.aiModel || ''}
-                    onChange={(e) => updateExt({ aiModel: e.target.value })}
-                    placeholder={AI_PROVIDERS[ext.aiProvider]?.defaultModel || ''} />
-                </label>
-                <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
-                  <button type="button" className="btn btn--secondary" onClick={testAI}>Test</button>
-                  {aiTestStatus && <span className="hint">{aiTestStatus}</span>}
-                </div>
-              </>
-            )}
-          </div>
-        </details>
-      </section>
-            <option value="">— Disabled (use rule-based only) —</option>
-            <option value="github">⭐ GitHub Models (free with GitHub account) — Llama 3.1 70B, Phi-3, Mistral</option>
-            <option value="huggingface">🤗 HuggingFace Inference API (free tier)</option>
-          </select>
+        <label className="field field--row" style={{marginBottom:'10px'}}>
+          <input
+            type="checkbox"
+            checked={ext.aiEnabled !== false}
+            onChange={(e) => updateExt({ aiEnabled: e.target.checked })}
+          />
+          <span style={{fontWeight:600}}>Enable AI Assistant (Cloudflare Workers AI)</span>
         </label>
 
-        {ext.aiProvider === 'github' && (
-          <p className="hint" style={{marginBottom:'10px', padding:'8px 12px', background:'#f0f9ff', borderRadius:'8px', borderLeft:'3px solid #0ea5e9'}}>
-            <strong>How to get your GitHub token (2 min):</strong><br/>
-            1. Go to <strong>github.com → Settings → Developer Settings → Personal Access Tokens → Fine-grained</strong><br/>
-            2. Create a new token — no special permissions needed<br/>
-            3. Copy and paste below
-          </p>
-        )}
-        {ext.aiProvider === 'huggingface' && (
-          <p className="hint" style={{marginBottom:'10px', padding:'8px 12px', background:'#fdf4ff', borderRadius:'8px', borderLeft:'3px solid #a855f7'}}>
-            <strong>How to get your HuggingFace token:</strong><br/>
-            1. Go to <strong>huggingface.co → Settings → Access Tokens</strong><br/>
-            2. Create a new Read token, paste below
-          </p>
-        )}
-
-        {ext.aiProvider && (
-          <>
+        {ext.aiEnabled !== false && (
+          <div style={{padding:'12px', background:'#f8fafc', borderRadius:'8px', border:'1px solid #e2e8f0', marginTop:'10px', marginLeft:'26px'}}>
+            <p className="hint" style={{marginBottom:'10px', fontSize:'0.8rem'}}>Developer Config: Point to your deployed Cloudflare Worker.</p>
+            <label className="field" style={{marginBottom:'8px'}}>
+              <span>Your Worker URL</span>
+              <input
+                value={ext.aiWorkerUrl || ''}
+                onChange={(e) => updateExt({ aiWorkerUrl: e.target.value })}
+                placeholder="https://job-autofill-ai.yourname.workers.dev"
+              />
+            </label>
             <label className="field" style={{marginBottom:'10px'}}>
-              <span>API Key / Token (stored locally, only sent to {AI_PROVIDERS[ext.aiProvider]?.name})</span>
-              <input
-                type="password"
-                value={ext.aiApiKey || ''}
-                onChange={(e) => updateExt({ aiApiKey: e.target.value })}
-                placeholder="Paste your token here"
-              />
+              <span>Worker Secret Key (optional)</span>
+              <input type="password" value={ext.aiSecretKey || ''}
+                onChange={(e) => updateExt({ aiSecretKey: e.target.value })}
+                placeholder="Leave blank if none" />
             </label>
-            <label className="field" style={{marginBottom:'12px'}}>
-              <span>Model name (optional — leave blank for default)</span>
-              <input
-                value={ext.aiModel || ''}
-                onChange={(e) => updateExt({ aiModel: e.target.value })}
-                placeholder={AI_PROVIDERS[ext.aiProvider]?.defaultModel || ''}
-              />
-            </label>
-            <div style={{display:'flex', gap:'10px', alignItems:'center'}}>
-              <button type="button" className="btn btn--secondary" onClick={testAI}>Test Connection</button>
-              {aiTestStatus && <span className="hint" style={{fontSize:'0.85rem'}}>{aiTestStatus}</span>}
-            </div>
-          </>
+            {ext.aiWorkerUrl && (
+              <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
+                <button type="button" className="btn btn--secondary" onClick={testAI}>Test AI Connection</button>
+                {aiTestStatus && <span className="hint" style={{fontSize:'0.85rem'}}>{aiTestStatus}</span>}
+              </div>
+            )}
+          </div>
         )}
       </section>
 

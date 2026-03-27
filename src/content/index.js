@@ -22,7 +22,7 @@ if (!globalThis[INIT_GUARD]) {
           const profile = await getActiveProfile()
           if (!profile.email && !profile.firstName) return
           const useAdvancedClassify = ext.useAdvancedFieldModel !== false
-          const aiSettings = { aiProvider: ext.aiProvider, aiApiKey: ext.aiApiKey, aiModel: ext.aiModel }
+          const aiSettings = ext.aiEnabled !== false ? { aiWorkerUrl: ext.aiWorkerUrl, aiSecretKey: ext.aiSecretKey } : null
           await fillVisibleFields(profile, { useAdvancedClassify, aiSettings })
           tryFillResumeFileInput(profile)
         }
@@ -59,7 +59,7 @@ if (!globalThis[INIT_GUARD]) {
           const ext = await getExtensionSettings()
           const resumeResult = tryFillResumeFileInput(profile)
           const useAdvancedClassify = ext.useAdvancedFieldModel !== false && message.useAdvancedClassify !== false
-          const aiSettings = { aiProvider: ext.aiProvider, aiApiKey: ext.aiApiKey, aiModel: ext.aiModel }
+          const aiSettings = ext.aiEnabled !== false ? { aiWorkerUrl: ext.aiWorkerUrl, aiSecretKey: ext.aiSecretKey } : null
 
           const result = await fillVisibleFields(profile, {
             useAdvancedClassify,
