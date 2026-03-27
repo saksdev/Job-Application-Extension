@@ -39,14 +39,25 @@ function setNativeValue(el, value, fromExtension) {
       ? window.HTMLTextAreaElement.prototype
       : window.HTMLInputElement.prototype
   const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set
+
+  // Simulate user focus
+  el.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+
+  // React 16+ setter bypass
   if (setter) {
     setter.call(el, value)
   } else {
     el.value = value
   }
+
   if (fromExtension) markFilledByExtension(el)
+
+  // Dispatch full keyboard and form lifecycle to trick React/Angular/Vue into firing their state updates
+  el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'End' }))
   el.dispatchEvent(new Event('input', { bubbles: true }))
+  el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, cancelable: true, key: 'End' }))
   el.dispatchEvent(new Event('change', { bubbles: true }))
+  el.dispatchEvent(new FocusEvent('blur', { bubbles: true }))
 }
 
 /**
